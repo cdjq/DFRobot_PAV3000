@@ -44,7 +44,6 @@ public:
      * @brief Destructor for the PAV3000 sensor.
      */
     ~DFRobot_PAV3000(void){
-        _pWire->end();
     };
 
     /**
