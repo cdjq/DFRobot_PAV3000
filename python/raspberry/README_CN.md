@@ -39,8 +39,12 @@ python PAV3000.py
     def set_range(self, range):
         '''
             @fn set_range
-            @brief 设置空气流速检测距离
-            @range AIRFLOW_RANGE_7_MPS:PAV3000_1005 AIRFLOW_RANGE_15MPS:PAV3000_1015
+            @brief 设置气流检测范围并初始化校准数据。
+            @details 本函数将传感器配置为 7 m/s 或 15 m/s 量程，并加载相应的校准数据点用于线性插值。
+                     校准数据由原始 ADC 值及对应的特定点气流速度组成。
+            @param range AIRFLOW_RANGE_7_MPS: PAV3000_1005 (0-7.23 m/s)，
+                         AIRFLOW_RANGE_15MPS: PAV3000_1015 (0-15 m/s)
+            @return 1: 设置成功，0: 设置失败（I2C 通信错误）
         '''
 
     def read_raw(self):
@@ -53,8 +57,14 @@ python PAV3000.py
     def read_meter_per_sec(self):
         '''
             @fn read_meter_per_sec
-            @brief 获取米/秒为单位的空气流速
-            @return 空气流速数据
+            @brief 使用线性插值法获取以米每秒为单位的气流速度。
+            @details 本函数通过线性插值算法将原始 ADC 值转换为速度测量值。算法流程如下：
+                     1. 从传感器读取原始 ADC 值
+                     2. 检查数值是否在有效范围内 (409-3686)
+                     3. 找到包围该原始值的校准数据点
+                     4. 计算原始值在区间内的百分比位置
+                     5. 应用线性插值公式：velocity = v1 + (v2 - v1) * percentage
+            @return 返回气流速度（单位：m/s），若传感器读数无效则返回 0.0
         '''
     
     def read_mile_per_hour(self):
