@@ -1,5 +1,5 @@
 /**
- * @file DFRobot_PAV3000.h
+ * @file DFRobot_PAV3000.cpp
  * @brief This is the implementation of the air velocity module driver library.
  * @copyright Copyright (c) 2024 DFRobot Co.Ltd (http://www.dfrobot.com)
  * @license The MIT License (MIT)
@@ -10,7 +10,7 @@
  */
 
 #include "DFRobot_PAV3000.h"
-static uint8_t _range = 0;
+
 
 DFRobot_PAV3000::DFRobot_PAV3000(TwoWire *pWire):_pWire(pWire){}
 
@@ -18,10 +18,10 @@ DFRobot_PAV3000::DFRobot_PAV3000(TwoWire *pWire):_pWire(pWire){}
 uint8_t DFRobot_PAV3000::setRange(uint8_t range)
 {
     _range = range;
-    float mpsDataPoint_7_mps[9] = {0, 1.07, 2.01, 3.00, 3.97, 4.96, 5.98, 6.99, 7.23}; // PAV3000-1005 datapoints
-    int rawDataPoint_7_mps[9] =  {409, 915, 1522, 2066, 2523, 2908, 3256, 3572, 3686}; // PAV3000-1005 datapoints
-    float mpsDataPoint_15_mps[13] = {0, 2.00, 3.00, 4.00, 5.00, 6.00, 7.00, 8.00, 9.00, 10.00, 11.00, 13.00, 15.00}; // PAV3000-1015 datapoints
-    int rawDataPoint_15_mps[13] =  {409, 1203, 1597, 1908, 2187, 2400, 2629, 2801, 3006, 3178, 3309, 3563, 3686}; // PAV3000-1015 datapoints
+    float mpsDataPoint7MPS[9] = {0, 1.07, 2.01, 3.00, 3.97, 4.96, 5.98, 6.99, 7.23}; // FS3000-1005 datapoints
+    int rawDataPoint7MPS[9] =  {409, 915, 1522, 2066, 2523, 2908, 3256, 3572, 3686}; // FS3000-1005 datapoints
+    float mpsDataPoint15MPS[13] = {0, 2.00, 3.00, 4.00, 5.00, 6.00, 7.00, 8.00, 9.00, 10.00, 11.00, 13.00, 15.00}; // FS3000-1015 datapoints
+    int rawDataPoint15MPS[13] =  {409, 1203, 1597, 1908, 2187, 2400, 2629, 2801, 3006, 3178, 3309, 3563, 3686}; // FS3000-1015 datapoints
 
     _pWire->begin();
     _pWire->beginTransmission(_addr);
@@ -32,14 +32,14 @@ uint8_t DFRobot_PAV3000::setRange(uint8_t range)
     
     if(_range == AIRFLOW_RANGE_7_MPS)
     {
-        memcpy(_mpsDataPoint,mpsDataPoint_7_mps,sizeof(float) * _range);
-        memcpy(_rawDataPoint,rawDataPoint_7_mps,sizeof(int) * _range);
+        memcpy(_mpsDataPoint,mpsDataPoint7MPS,sizeof(float) * _range);
+        memcpy(_rawDataPoint,rawDataPoint7MPS,sizeof(int) * _range);
     }
 
     if(_range == AIRFLOW_RANGE_15_MPS)
     {
-        memcpy(_mpsDataPoint,mpsDataPoint_15_mps,sizeof(float) * _range);
-        memcpy(_rawDataPoint,rawDataPoint_15_mps,sizeof(int) * _range);
+        memcpy(_mpsDataPoint,mpsDataPoint15MPS,sizeof(float) * _range);
+        memcpy(_rawDataPoint,rawDataPoint15MPS,sizeof(int) * _range);
     }
 
     return 1;
@@ -68,17 +68,17 @@ float DFRobot_PAV3000::readMeterPerSec(void)
     int data_position = 0;
     float airflowMps = 0.0;
     
-    if(airflowRaw < 409){
-        return 0.0;
-    }else if(airflowRaw >= 3686)
+    if(airflowRaw < PAV3000_MIN_RAW_VALUE){
+        return airflowMps;
+    }else if(airflowRaw >= PAV3000_MAX_RAW_VALUE)
     {   
         if(_range == AIRFLOW_RANGE_7_MPS)
         {
-            return 7.23;
+            return PAV3000_7MPS_MAX_VELOCITY;
         }
         else if(_range == AIRFLOW_RANGE_15_MPS)
         {
-            return 15.00;
+            return PAV3000_15MPS_MAX_VELOCITY;
         }
     }
 
@@ -101,7 +101,7 @@ float DFRobot_PAV3000::readMeterPerSec(void)
 
 float DFRobot_PAV3000::readMilePerHour(void)
 {
-    return (readMeterPerSec() * 2.2369362912);
+    return (readMeterPerSec() * PAV3000_MPH_CONVERSION_FACTOR);
 }
 
 

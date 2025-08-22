@@ -81,4 +81,4 @@ raspberry          |      X       |      X       |      √       |
 
 ## 创作者
 
-Written by TangJie(jie.tang@dfrobot.com), 2021. (Welcome to our [website](https://www.dfrobot.com/))
+Written by TangJie(jie.tang@dfrobot.com), 2025. (Welcome to our [website](https://www.dfrobot.com/))

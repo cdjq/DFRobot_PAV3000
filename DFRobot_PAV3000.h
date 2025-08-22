@@ -18,8 +18,15 @@
 #include "stdlib.h"
 #include "string.h"
 
-#define AIRFLOW_RANGE_7_MPS 0x09
-#define AIRFLOW_RANGE_15_MPS 0x0D
+#define AIRFLOW_RANGE_7_MPS 0x08 ///< 7 m/s range
+#define AIRFLOW_RANGE_15_MPS 0x0C ///< 15 m/s range
+
+#define PAV3000_I2C_ADDRESS          0x28 ///< device address
+#define PAV3000_MIN_RAW_VALUE        409 ///< minimum raw value
+#define PAV3000_MAX_RAW_VALUE        3686 ///< maximum raw value
+#define PAV3000_7MPS_MAX_VELOCITY    7.23f ///< maximum velocity in m/s for 7 m/s range
+#define PAV3000_15MPS_MAX_VELOCITY   15.00f ///< maximum velocity in m/s for 15 m/s range
+#define PAV3000_MPH_CONVERSION_FACTOR 2.2369362912f ///< conversion factor from m/s to mph
 
 //#define ENABLE_DBG ///< Enable this macro to view the detailed execution process of the program.
 #ifdef ENABLE_DBG
@@ -48,9 +55,14 @@ public:
 
     /**
      * @fn setRange
-     * @brief Set the airflow detection range.
-     * @param range AIRFLOW_RANGE_7_MPS: PAV3000_1005, AIRFLOW_RANGE_15MPS: PAV3000_1015
-     * @return 1: Setting successful, 0: Setting failed.
+     * @brief Set the airflow detection range and initialize calibration data.
+     * @details This function configures the sensor for either 7 m/s or 15 m/s range.
+     *          It loads the appropriate calibration data points for linear interpolation.
+     *          The calibration data consists of raw ADC values and corresponding 
+     *          velocity measurements at specific points.
+     * @param range AIRFLOW_RANGE_7_MPS: PAV3000_1005 (0-7.23 m/s), 
+     *              AIRFLOW_RANGE_15MPS: PAV3000_1015 (0-15 m/s)
+     * @return 1: Setting successful, 0: Setting failed (I2C communication error)
      */
     uint8_t setRange(uint8_t range);
 
@@ -63,8 +75,15 @@ public:
 
     /**
      * @fn readMeterPerSec
-     * @brief Get the airflow velocity in meters per second (m/s).
-     * @return Airflow velocity data.
+     * @brief Get the airflow velocity in meters per second using linear interpolation.
+     * @details This function implements a linear interpolation algorithm to convert
+     *          raw ADC values to velocity measurements. The algorithm works as follows:
+     *          1. Read raw ADC value from sensor
+     *          2. Check if value is within valid range (409-3686)
+     *          3. Find the calibration data points that bracket the raw value
+     *          4. Calculate the percentage position within the bracket
+     *          5. Apply linear interpolation: velocity = v1 + (v2-v1) * percentage
+     * @return Airflow velocity in m/s, or 0.0 if sensor reading is invalid
      */
     float readMeterPerSec(void);
 
@@ -83,7 +102,8 @@ private:
     bool checkSum(void* buf);
     float _mpsDataPoint[13]; 
     int _rawDataPoint[13]; 
-    uint8_t _addr = 0x28;
+    uint8_t _addr = PAV3000_I2C_ADDRESS;
+    uint8_t _range = 0;
 
 
 };
